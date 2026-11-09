@@ -8,7 +8,7 @@ export function buildCalendarInvite(plan: DatePlan) {
   const end = stamp(endAt.date, endAt.time);
   const now = new Date();
   const dtStamp = now.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
-  const summary = `Date · ${plan.activity}`;
+  const summary = `Date with Darko · ${plan.activity}`;
   const description = plan.message
     ? `${plan.message}\n\nA small contest. May the better one win.`
     : "A small contest. May the better one win.";
