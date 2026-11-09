@@ -36,7 +36,7 @@ export function AskScreen({ onYes }: { onYes: () => void }) {
           onClick={onYes}
           className="inline-flex h-14 w-full shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-[#d56b7d] to-[#c2576b] px-6 text-base font-semibold tracking-wide text-white shadow-[0_14px_30px_-12px_rgba(194,87,107,0.95)] transition duration-200 hover:-translate-y-0.5 hover:from-[#c95f72] hover:to-[#b3475d] active:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose min-[370px]:w-[9.5rem]"
         >
-          YES
+          YES 🫠
         </button>
         <NoButton onTaunt={setTaunt} />
       </div>

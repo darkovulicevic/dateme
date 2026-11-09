@@ -1,14 +1,6 @@
 export const ACTIVITIES = [
-  { id: "billiards", label: "🎱 Billiards" },
+  { id: "karting", label: "🏎️ Go-karting" },
   { id: "bowling", label: "🎳 Bowling" },
-  { id: "coffee", label: "☕ Coffee" },
-  { id: "dinner", label: "🍽️ Dinner" },
-  { id: "cinema", label: "🎬 Cinema" },
-  { id: "walk", label: "🚶 Evening walk" },
-  { id: "sunset", label: "🌅 Sunset watching" },
-  { id: "dessert", label: "🍰 Dessert" },
-  { id: "spontaneous", label: "🎡 Something spontaneous" },
-  { id: "surprise", label: "✨ Surprise me" },
 ] as const;
 
 export type ActivityId = (typeof ACTIVITIES)[number]["id"];
