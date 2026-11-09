@@ -23,22 +23,10 @@ export function ConfirmScreen({ plan }: { plan: DatePlan }) {
         </svg>
       </div>
 
-      <div className="mx-auto mb-7 max-w-sm">
-        <div className="flex items-center">
-          <Avatar name="Darko" src="darko.jpg" />
-          <div className="mx-2 flex min-w-0 flex-1 items-center sm:mx-3">
-            <span className="h-px flex-1 bg-gradient-to-r from-transparent via-rose/50 to-rose/50" />
-            <span className="mx-2 rounded-full border border-line bg-white px-3 py-1 font-serif text-sm font-semibold tracking-[0.18em] text-rose shadow-sm">
-              VS
-            </span>
-            <span className="h-px flex-1 bg-gradient-to-l from-transparent via-rose/50 to-rose/50" />
-          </div>
-          <Avatar name="Magdalena" src="magdalena.jpg" />
-        </div>
-        <div className="mt-3 flex justify-between text-xs font-semibold tracking-wide text-muted">
-          <span className="w-20 text-center sm:w-[5.5rem]">Darko</span>
-          <span className="w-20 text-center sm:w-[5.5rem]">Magdalena</span>
-        </div>
+      <div className="mb-7 flex items-center justify-center gap-3 sm:gap-4">
+        <Avatar name="Darko" src="darko.jpg" glow="rose" />
+        <span className="h-px w-10 bg-gradient-to-r from-transparent via-rose/55 to-transparent sm:w-14" aria-hidden="true" />
+        <Avatar name="Magdalena" src="magdalena.jpg" glow="gold" />
       </div>
 
       <h1
@@ -80,16 +68,21 @@ export function ConfirmScreen({ plan }: { plan: DatePlan }) {
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
-function Avatar({ name, src }: { name: string; src: string }) {
+function Avatar({ name, src, glow }: { name: string; src: string; glow: "rose" | "gold" }) {
+  const glowClass = glow === "rose" ? "bg-rose/25" : "bg-[#f0c27a]/30";
+
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={`${BASE_PATH}/avatars/${src}`}
-      alt={name}
-      width={160}
-      height={160}
-      className="h-20 w-20 shrink-0 rounded-full border-[3px] border-white object-cover shadow-[0_14px_30px_-14px_rgba(194,87,107,0.7)] ring-2 ring-rose/30 sm:h-[5.5rem] sm:w-[5.5rem]"
-    />
+    <div className="relative shrink-0">
+      <span className={`absolute top-1/2 left-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full blur-xl sm:h-24 sm:w-24 ${glowClass}`} aria-hidden="true" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={`${BASE_PATH}/avatars/${src}`}
+        alt={name}
+        width={160}
+        height={160}
+        className="relative h-20 w-20 rounded-full border-[3px] border-white object-cover shadow-[0_14px_30px_-14px_rgba(194,87,107,0.7)] ring-2 ring-rose/30 sm:h-[5.5rem] sm:w-[5.5rem]"
+      />
+    </div>
   );
 }
 
