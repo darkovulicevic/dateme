@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 type Shape = "rect" | "circle" | "ribbon" | "star";
 type Kind = "bloom" | "left" | "right";
@@ -82,15 +82,60 @@ const TRICKLE_START = 1800;
 const TRICKLE_END = 12000;
 const TRICKLE_EVERY = 220;
 
-export function Confetti() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+// Frames slower than this (about 28 fps) count as "slow".
+const SLOW_FRAME_MS = 36;
+const SLOW_STREAK_TO_THIN = 5;
+const MIN_QUALITY = 0.3;
 
+export function Confetti() {
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const context = canvas.getContext("2d");
-    if (!context) return;
+
+    // Phones and small laptops get a lighter show from the start.
+    const compact = window.innerWidth < 700 || (navigator.hardwareConcurrency ?? 8) <= 4;
+    let quality = compact ? 0.5 : 1;
+
+    // The canvas lives directly on <body>, away from the animated card, so the browser
+    // does not have to re-composite the card while the pieces move.
+    const canvas = document.createElement("canvas");
+    canvas.setAttribute("aria-hidden", "true");
+    canvas.style.cssText = "position:fixed;inset:0;z-index:30;pointer-events:none;";
+    document.body.appendChild(canvas);
+
+    const context = canvas.getContext("2d", { alpha: true });
+    if (!context) {
+      canvas.remove();
+      return;
+    }
+
+    // Pause the drifting background glows while the confetti runs.
+    document.documentElement.dataset.confetti = "on";
+
+    const ratio = Math.min(window.devicePixelRatio || 1, compact ? 1.5 : 2);
+    let viewWidth = window.innerWidth;
+    let viewHeight = window.innerHeight;
+
+    const fit = () => {
+      viewWidth = window.innerWidth;
+      viewHeight = window.innerHeight;
+      canvas.width = Math.floor(viewWidth * ratio);
+      canvas.height = Math.floor(viewHeight * ratio);
+    };
+    fit();
+
+    // The soft glow is drawn once and then only scaled, instead of building a gradient every frame.
+    const sprite = document.createElement("canvas");
+    sprite.width = 128;
+    sprite.height = 128;
+    const spriteContext = sprite.getContext("2d");
+    if (spriteContext) {
+      const gradient = spriteContext.createRadialGradient(64, 64, 0, 64, 64, 64);
+      gradient.addColorStop(0, "rgba(255, 226, 214, 1)");
+      gradient.addColorStop(0.55, "rgba(246, 184, 196, 0.5)");
+      gradient.addColorStop(1, "rgba(246, 184, 196, 0)");
+      spriteContext.fillStyle = gradient;
+      spriteContext.fillRect(0, 0, 128, 128);
+    }
 
     let pieces: Piece[] = [];
     let glows: Glow[] = [];
@@ -100,28 +145,17 @@ export function Confetti() {
     let nextTrickle = TRICKLE_START;
     let last = 0;
     let tick = 0;
+    let slowStreak = 0;
     const t0 = performance.now();
 
-    const width = () => window.innerWidth;
-    const height = () => window.innerHeight;
-
-    const fit = () => {
-      const ratio = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.floor(width() * ratio);
-      canvas.height = Math.floor(height() * ratio);
-      canvas.style.width = `${width()}px`;
-      canvas.style.height = `${height()}px`;
-      context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    };
-    fit();
-
     const fire = (burst: Burst) => {
-      const originX = width() * burst.x;
-      const originY = height() * burst.y;
-      const reach = Math.min(Math.max(width() * burst.reach, 150), 540);
+      const originX = viewWidth * burst.x;
+      const originY = viewHeight * burst.y;
+      const reach = Math.min(Math.max(viewWidth * burst.reach, 150), 540);
       glows.push({ x: originX, y: originY, radius: reach * 0.85, age: 0, max: 80 });
 
-      for (let index = 0; index < burst.count; index += 1) {
+      const count = Math.max(12, Math.round(burst.count * quality));
+      for (let index = 0; index < count; index += 1) {
         const distance = reach * (0.22 + 0.78 * Math.sqrt(Math.random()));
         const angle =
           burst.kind === "bloom"
@@ -129,7 +163,7 @@ export function Confetti() {
             : burst.kind === "right"
               ? -1.25 + Math.random() * 1.85
               : Math.PI + 1.25 - Math.random() * 1.85;
-        const shape = shapeAt(index);
+        const shape = shapeAt(index, compact);
         const palette = shape === "star" ? GOLD : pick(PALETTE);
         pieces.push({
           ox: originX,
@@ -137,7 +171,7 @@ export function Confetti() {
           dx: Math.cos(angle) * distance,
           dy: Math.sin(angle) * distance * 0.8,
           frames: burst.frames * BURST_PACE * (0.85 + Math.random() * 0.3),
-          delay: Math.random() * 10,
+          delay: Math.random() * 14,
           x: originX,
           y: originY,
           vx: 0,
@@ -170,7 +204,7 @@ export function Confetti() {
           dy: 0,
           frames: 0,
           delay: 0,
-          x: Math.random() * width(),
+          x: Math.random() * viewWidth,
           y: -20,
           vx: -0.3 + Math.random() * 0.6,
           vy: 0.5 + Math.random() * 0.6,
@@ -192,40 +226,64 @@ export function Confetti() {
       }
     };
 
+    // If the phone struggles, drop half of the pieces and spawn fewer from now on.
+    const thin = () => {
+      quality = Math.max(MIN_QUALITY, quality * 0.6);
+      let toggle = false;
+      for (const piece of pieces) {
+        if (piece.dead) continue;
+        toggle = !toggle;
+        if (toggle) piece.dead = true;
+      }
+    };
+
+    const stop = () => {
+      alive = false;
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", fit);
+      delete document.documentElement.dataset.confetti;
+      canvas.remove();
+    };
+
     const draw = (now: number) => {
       const elapsed = now - t0;
-      const dt = last === 0 ? 1 : Math.min((now - last) / 16.667, 2.5);
+      const frameMs = last === 0 ? 16.667 : now - last;
+      const dt = Math.min(frameMs / 16.667, 2.5);
       last = now;
       tick += 1;
+
+      if (frameMs > SLOW_FRAME_MS) slowStreak += 1;
+      else slowStreak = Math.max(0, slowStreak - 1);
+      if (slowStreak >= SLOW_STREAK_TO_THIN && quality > MIN_QUALITY) {
+        thin();
+        slowStreak = 0;
+      }
 
       while (nextBurst < BURSTS.length && BURSTS[nextBurst].at <= elapsed) {
         fire(BURSTS[nextBurst]);
         nextBurst += 1;
       }
       while (nextTrickle <= elapsed && nextTrickle < TRICKLE_END) {
-        trickle(5);
+        trickle(Math.max(1, Math.round(5 * quality)));
         nextTrickle += TRICKLE_EVERY;
       }
 
-      context.clearRect(0, 0, width(), height());
+      context.setTransform(1, 0, 0, 1, 0, 0);
+      context.globalAlpha = 1;
+      context.clearRect(0, 0, canvas.width, canvas.height);
 
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
       for (const glow of glows) {
         glow.age += dt;
         const p = glow.age / glow.max;
         if (p >= 1) continue;
         const radius = glow.radius * (0.25 + 0.75 * (1 - (1 - p) * (1 - p)));
-        const alpha = 0.34 * (1 - p) * (1 - p);
-        const gradient = context.createRadialGradient(glow.x, glow.y, 0, glow.x, glow.y, radius);
-        gradient.addColorStop(0, `rgba(255, 226, 214, ${alpha})`);
-        gradient.addColorStop(0.55, `rgba(246, 184, 196, ${alpha * 0.5})`);
-        gradient.addColorStop(1, "rgba(246, 184, 196, 0)");
-        context.fillStyle = gradient;
-        context.beginPath();
-        context.arc(glow.x, glow.y, radius, 0, Math.PI * 2);
-        context.fill();
+        context.globalAlpha = 0.34 * (1 - p) * (1 - p);
+        context.drawImage(sprite, glow.x - radius, glow.y - radius, radius * 2, radius * 2);
       }
 
-      let waiting = 0;
+      const drag = Math.pow(0.975, dt);
+      let active = 0;
 
       for (const piece of pieces) {
         if (piece.dead) continue;
@@ -234,12 +292,10 @@ export function Confetti() {
           piece.dead = true;
           continue;
         }
+        active += 1;
 
         const local = piece.age - piece.delay;
-        if (local < 0) {
-          waiting += 1;
-          continue;
-        }
+        if (local < 0) continue;
 
         let scale = 1;
         let intro = 1;
@@ -254,13 +310,13 @@ export function Confetti() {
           scale = 0.35 + 0.65 * Math.min(1, local / 18);
           intro = Math.min(1, local / 10);
         } else {
-          const drag = Math.pow(0.975, dt);
           piece.vx *= drag;
           piece.vy = piece.vy * drag + FALL_GRAVITY * dt;
           piece.x += (piece.vx + Math.sin(piece.wobble) * 0.5) * dt;
           piece.y += piece.vy * dt;
-          if (piece.y > height() + 80) {
+          if (piece.y > viewHeight + 80) {
             piece.dead = true;
+            active -= 1;
             continue;
           }
         }
@@ -269,15 +325,13 @@ export function Confetti() {
         piece.rot += piece.vr * dt;
         piece.flip += piece.flipSpeed * dt;
 
+        // Pieces that are off screen are still simulated, but not drawn.
+        if (piece.x < -40 || piece.x > viewWidth + 40 || piece.y < -40 || piece.y > viewHeight + 40) continue;
+
         const fadeStart = piece.maxLife * 0.85;
         const fade = piece.age < fadeStart ? 1 : 1 - (piece.age - fadeStart) / (piece.maxLife - fadeStart);
-
-        context.save();
-        context.translate(piece.x, piece.y);
-        context.rotate(piece.rot);
         context.globalAlpha = Math.max(0, intro * fade);
-        paint(context, piece, scale);
-        context.restore();
+        paint(context, piece, scale, ratio);
       }
 
       if (tick % 90 === 0) {
@@ -285,39 +339,41 @@ export function Confetti() {
         glows = glows.filter((glow) => glow.age < glow.max);
       }
 
-      const running =
-        elapsed < TRICKLE_END || waiting > 0 || pieces.some((piece) => !piece.dead);
+      const running = elapsed < TRICKLE_END || active > 0;
       if (alive && running) raf = requestAnimationFrame(draw);
+      else if (alive) stop();
     };
 
     raf = requestAnimationFrame(draw);
     window.addEventListener("resize", fit);
 
-    return () => {
-      alive = false;
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", fit);
-    };
+    return stop;
   }, []);
 
-  return <canvas ref={canvasRef} className="pointer-events-none fixed inset-0 z-30" aria-hidden="true" />;
+  return null;
 }
 
 function pick<T>(items: readonly T[]): T {
   return items[Math.floor(Math.random() * items.length)] as T;
 }
 
-function shapeAt(index: number): Shape {
+function shapeAt(index: number, compact: boolean): Shape {
   if (index % 9 === 0) return "star";
-  if (index % 6 === 1) return "ribbon";
+  // Curved ribbons are the most expensive shape to draw, so phones get plain pieces instead.
+  if (!compact && index % 6 === 1) return "ribbon";
   if (index % 5 === 2) return "circle";
   return "rect";
 }
 
-function paint(context: CanvasRenderingContext2D, piece: Piece, scale: number) {
+// One transform per piece (no save/restore), which is noticeably cheaper on phones.
+function paint(context: CanvasRenderingContext2D, piece: Piece, scale: number, ratio: number) {
+  const cos = Math.cos(piece.rot);
+  const sin = Math.sin(piece.rot);
+
   if (piece.shape === "star") {
     const twinkle = 0.65 + 0.35 * Math.abs(Math.sin(piece.wobble * 2));
     const radius = piece.w * 0.95 * scale * twinkle;
+    context.setTransform(cos * ratio, sin * ratio, -sin * ratio, cos * ratio, piece.x * ratio, piece.y * ratio);
     context.fillStyle = piece.front;
     context.beginPath();
     for (let point = 0; point < 8; point += 1) {
@@ -335,10 +391,18 @@ function paint(context: CanvasRenderingContext2D, piece: Piece, scale: number) {
 
   const facing = Math.cos(piece.flip);
   const flat = Math.max(0.16, Math.abs(facing));
+  const sx = scale;
+  const sy = scale * flat;
+  context.setTransform(
+    cos * sx * ratio,
+    sin * sx * ratio,
+    -sin * sy * ratio,
+    cos * sy * ratio,
+    piece.x * ratio,
+    piece.y * ratio,
+  );
   const color = facing >= 0 ? piece.front : piece.back;
-  context.scale(scale, scale * flat);
   context.fillStyle = color;
-  context.strokeStyle = color;
 
   if (piece.shape === "circle") {
     context.beginPath();
@@ -350,6 +414,7 @@ function paint(context: CanvasRenderingContext2D, piece: Piece, scale: number) {
   if (piece.shape === "ribbon") {
     const length = piece.h * 1.7;
     const bend = Math.sin(piece.wobble) * length * 0.32;
+    context.strokeStyle = color;
     context.lineWidth = Math.max(2, piece.w * 0.34);
     context.lineCap = "round";
     context.beginPath();

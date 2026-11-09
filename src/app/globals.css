@@ -97,6 +97,12 @@ body {
   animation: floaty 10s ease-in-out infinite;
 }
 
+/* While the confetti plays, keep the page quiet so the phone can focus on the pieces. */
+[data-confetti="on"] .floaty,
+[data-confetti="on"] .ring-pulse {
+  animation-play-state: paused;
+}
+
 @keyframes taunt-in {
   from {
     opacity: 0;
@@ -121,6 +127,38 @@ body {
 input[type="date"],
 input[type="time"] {
   color-scheme: light;
+}
+
+/*
+ * iOS Safari gives date and time inputs their own intrinsic width and ignores
+ * `width: 100%`, so they can push out of the card. These rules keep them inside it.
+ */
+input[type="date"],
+input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 3.4rem;
+  margin: 0;
+  text-align: left;
+}
+
+/* iOS collapses an empty date/time field, so keep its height steady. */
+input[type="date"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value {
+  min-width: 0;
+  min-height: 1.5em;
+  margin: 0;
+  text-align: left;
+}
+
+input[type="date"]::-webkit-datetime-edit,
+input[type="time"]::-webkit-datetime-edit {
+  padding: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

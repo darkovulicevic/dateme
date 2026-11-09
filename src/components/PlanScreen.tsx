@@ -133,7 +133,7 @@ export function PlanScreen({
           </div>
         </Field>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Date" htmlFor="date" error={errors.date}>
             <input
               id="date"
@@ -237,7 +237,7 @@ function Field({
   children: ReactNode;
 }) {
   return (
-    <div className="text-left">
+    <div className="min-w-0 text-left">
       <label htmlFor={htmlFor} className="mb-2 block text-[0.72rem] font-semibold tracking-[0.16em] text-muted uppercase">
         {label}
       </label>
