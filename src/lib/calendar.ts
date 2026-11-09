@@ -43,6 +43,18 @@ export function buildCalendarInvite(plan: DatePlan) {
   return lines.map(foldLine).join("\r\n") + "\r\n";
 }
 
+export function saveCalendarFile(plan: DatePlan) {
+  const file = new Blob([buildCalendarInvite(plan)], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(file);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "date.ics";
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 export function calendarHref(plan: DatePlan) {
   const params = new URLSearchParams({
     activityId: plan.activityId,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { calendarHref } from "@/lib/calendar";
+import { saveCalendarFile } from "@/lib/calendar";
 import { formatPlanDate, formatPlanTime, type DatePlan } from "@/lib/plan";
 
 export function ConfirmScreen({ plan, onRestart }: { plan: DatePlan; onRestart: () => void }) {
@@ -44,12 +44,13 @@ export function ConfirmScreen({ plan, onRestart }: { plan: DatePlan; onRestart: 
         </p>
       ) : null}
 
-      <a
-        href={calendarHref(plan)}
+      <button
+        type="button"
+        onClick={() => saveCalendarFile(plan)}
         className="mt-8 inline-flex h-12 items-center justify-center rounded-full bg-gradient-to-b from-[#d56b7d] to-[#c2576b] px-6 text-sm font-semibold tracking-wide text-white shadow-[0_14px_30px_-12px_rgba(194,87,107,0.95)] transition hover:-translate-y-0.5"
       >
         Add to my calendar
-      </a>
+      </button>
       <p className="mt-2 text-xs leading-relaxed text-muted">
         Your phone will ask before it saves it. The reminder is set for the day before, and again two hours before.
       </p>
