@@ -25,6 +25,10 @@ cleanup() {
 }
 trap cleanup EXIT
 
+if [ -z "${NEXT_PUBLIC_API_BASE:-}" ]; then
+  echo "Warning: NEXT_PUBLIC_API_BASE is empty. Answers cannot be sent from GitHub Pages until it is set." >&2
+fi
+
 export GITHUB_PAGES=1
 export NEXT_PUBLIC_BASE_PATH="${NEXT_PUBLIC_BASE_PATH:-/datememagdalena}"
 
