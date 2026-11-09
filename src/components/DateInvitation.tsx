@@ -27,15 +27,7 @@ export function DateInvitation() {
             }}
           />
         ) : null}
-        {screen === "confirm" && plan ? (
-          <ConfirmScreen
-            plan={plan}
-            onRestart={() => {
-              setPlan(null);
-              setScreen("ask");
-            }}
-          />
-        ) : null}
+        {screen === "confirm" && plan ? <ConfirmScreen plan={plan} /> : null}
         <p className="mt-5 text-center text-[0.68rem] font-semibold tracking-[0.18em] text-muted/80 uppercase">
           A little invitation
         </p>
