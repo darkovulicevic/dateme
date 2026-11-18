@@ -1,10 +1,22 @@
 # Date Me?
 
-A small, personal invitation. She opens one page, the **NO** button slips away, and **YES** leads to a short plan for the evening. Her answer is saved on the server — to a private GitHub repository, or by email if GitHub is not set up. The page only says it worked after that save actually succeeds.
+A small personal invitation site. One page, three steps: a playful YES/NO question, a short date plan, then a confirmation with confetti and a calendar invite.
+
+The answer is saved on the server (GitHub or email). The confirmation screen only appears after that save succeeds.
 
 ## Stack
 
-Next.js (App Router), React, TypeScript, and Tailwind CSS. One page, plus `POST /api/submit`.
+- **Next.js** (App Router) + **React** + **TypeScript**
+- **Tailwind CSS**
+- Server route: `POST /api/submit`
+- Optional: GitHub Contents API and/or [Resend](https://resend.com) for delivery
+- Calendar: `.ics` download with reminders
+
+## Flow
+
+1. **Ask** — YES continues; NO dodges the pointer.
+2. **Plan** — activity (go-karting or bowling), date (within 3 weeks), time, optional note.
+3. **Confirm** — confetti, avatars, plan summary, “Add to my calendar”.
 
 ## Local setup
 
@@ -16,7 +28,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-Fill in at least one storage option in `.env.local` before you share the link. With neither option set, the form returns an error and does not show the confirmation screen.
+Fill in at least one storage option in `.env.local` before you share the link. With neither set, the form returns an error and never shows confirmation.
 
 ## Saving answers
 
@@ -30,8 +42,8 @@ Each submission stores:
 
 ### GitHub (preferred)
 
-1. Create a **private** repository just for answers, for example `date-me-answers`. Add a README so the `main` branch exists. Keep this separate from the website repository — a commit in the website repo would redeploy the site on every answer.
-2. Create a fine-grained personal access token with **Contents: Read and write** on that repository only.
+1. Create a **private** repo only for answers (e.g. `date-me-answers`), separate from this website repo.
+2. Add a fine-grained PAT with **Contents: Read and write** on that repo.
 3. Set:
 
 ```bash
@@ -41,11 +53,11 @@ GITHUB_BRANCH=main
 GITHUB_PATH=submissions
 ```
 
-Each answer becomes its own file, such as `submissions/2026-11-09T00-12-00-000Z-<id>.json`. A separate file avoids two answers overwriting each other.
+Each answer is its own JSON file under `submissions/`.
 
 ### Email (fallback)
 
-If GitHub is not configured, the same answer is sent with [Resend](https://resend.com). If GitHub is configured but the save fails, the server tries email before it tells her something went wrong.
+If GitHub is not configured (or the GitHub save fails), the same payload is emailed via Resend:
 
 ```bash
 RESEND_API_KEY=re_...
@@ -53,22 +65,38 @@ NOTIFY_EMAIL=you@example.com
 FROM_EMAIL=Date Me <onboarding@resend.dev>
 ```
 
-`onboarding@resend.dev` only delivers to the address on your Resend account. For a real sender, verify a domain and put that address in `FROM_EMAIL`.
+`onboarding@resend.dev` only delivers to your Resend account email. For a real sender, verify a domain.
 
-## Deploy on Vercel
+## Deploy
 
-1. Push this project to GitHub (the website repo, not the answers repo).
-2. Import it at [vercel.com/new](https://vercel.com/new). Vercel detects Next.js.
-3. Add the environment variables from `.env.example` for Production. Do not mark them as exposed to the browser.
-4. Deploy, then submit a test answer and confirm the JSON file or the email arrived.
+### Vercel (API + full app)
 
-The site is marked `noindex` so search engines are asked not to list it. The link still works for anyone who has it.
+1. Import this repo at [vercel.com/new](https://vercel.com/new).
+2. Add env vars from `.env.example` (Production). Do not expose them as `NEXT_PUBLIC_`.
+3. Deploy and send a test answer.
+
+### GitHub Pages (static page only)
+
+Pages serves the UI. Answers still need the Vercel API.
+
+```bash
+npm run pages
+```
+
+Or push to `main` — the Actions workflow builds and deploys `out/`.
+
+Set the GitHub Actions variable `API_BASE_URL` to your Vercel URL (e.g. `https://your-app.vercel.app`). On Vercel, `ALLOWED_ORIGINS` defaults to `https://darkovulicevic.github.io` (override if needed).
+
+`NEXT_PUBLIC_BASE_PATH` must match the Pages path (default `/dateme`). If the GitHub repo name differs, rename the repo or change the path in `scripts/build-pages.sh` and `.github/workflows/pages.yml`.
 
 ## Scripts
 
 ```bash
-npm run dev
-npm run build
-npm run start
-npm run lint
+npm run dev      # local development
+npm run build    # production build
+npm run start    # serve production build
+npm run lint     # eslint
+npm run pages    # static export for GitHub Pages
 ```
+
+The site is `noindex`. The link still works for anyone who has it.
