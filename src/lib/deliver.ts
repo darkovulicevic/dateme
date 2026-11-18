@@ -138,7 +138,7 @@ async function saveToGithub(config: GithubConfig, submission: StoredSubmission) 
 async function sendEmail(config: EmailConfig, submission: StoredSubmission) {
   const note = submission.message || "—";
   const text = [
-    "Magdalena said yes.",
+    "She said yes.",
     "",
     `Activity: ${submission.activity}`,
     `Date: ${submission.date}`,
@@ -160,7 +160,7 @@ async function sendEmail(config: EmailConfig, submission: StoredSubmission) {
     body: JSON.stringify({
       from: config.from,
       to: [config.to],
-      subject: `Magdalena said yes! ${submission.activity} · ${submission.date} ${submission.time}`,
+      subject: `She said yes! ${submission.activity} · ${submission.date} ${submission.time}`,
       text,
       html: emailHtml(submission, note),
       attachments: [
@@ -188,7 +188,7 @@ function emailHtml(submission: StoredSubmission, note: string) {
   <body style="margin:0;background:#fbf3ee;font-family:Georgia,serif;color:#3f2a30;">
     <div style="max-width:480px;margin:32px auto;background:#fffaf7;border-radius:20px;padding:28px;">
       <p style="margin:0 0 8px;letter-spacing:0.16em;text-transform:uppercase;font-size:12px;color:#c2576b;">Date Me</p>
-      <h1 style="margin:0 0 16px;font-weight:500;font-size:28px;">Magdalena said yes!</h1>
+      <h1 style="margin:0 0 16px;font-weight:500;font-size:28px;">She said yes!</h1>
       <table style="border-collapse:collapse;font-family:sans-serif;font-size:15px;">
         ${row("Activity", submission.activity)}
         ${row("Date", submission.date)}

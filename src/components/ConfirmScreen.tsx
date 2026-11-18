@@ -26,7 +26,7 @@ export function ConfirmScreen({ plan }: { plan: DatePlan }) {
       <div className="mb-7 flex items-center justify-center gap-3 sm:gap-4">
         <Avatar name="Darko" src="darko.jpg" glow="rose" />
         <span className="h-px w-10 bg-gradient-to-r from-transparent via-rose/55 to-transparent sm:w-14" aria-hidden="true" />
-        <Avatar name="Magdalena" src="magdalena.jpg" glow="gold" />
+        <Avatar name="" src="partner.jpg" glow="gold" />
       </div>
 
       <h1

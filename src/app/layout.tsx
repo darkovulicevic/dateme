@@ -13,11 +13,11 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Date Me, Magdalena?",
+  title: "Date Me?",
   description: "Would you go on a date with me?",
   robots: { index: false, follow: false },
   openGraph: {
-    title: "Date Me, Magdalena?",
+    title: "Date Me?",
     description: "Would you go on a date with me?",
     type: "website",
   },

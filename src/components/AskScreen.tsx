@@ -16,7 +16,7 @@ export function AskScreen({ onYes }: { onYes: () => void }) {
       <div className="mx-auto mb-7 h-px w-16 bg-gradient-to-r from-transparent via-rose/60 to-transparent" />
 
       <p className="text-center text-[0.72rem] font-semibold tracking-[0.22em] text-rose uppercase">
-        For Magdalena
+        A small invitation
       </p>
       <h1
         ref={headingRef}

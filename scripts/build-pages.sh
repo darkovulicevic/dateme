@@ -30,7 +30,7 @@ if [ -z "${NEXT_PUBLIC_API_BASE:-}" ]; then
 fi
 
 export GITHUB_PAGES=1
-export NEXT_PUBLIC_BASE_PATH="${NEXT_PUBLIC_BASE_PATH:-/datememagdalena}"
+export NEXT_PUBLIC_BASE_PATH="${NEXT_PUBLIC_BASE_PATH:-/dateme}"
 
 # Drop the dev server's generated types. They still point at the API routes
 # that this build temporarily moves aside.

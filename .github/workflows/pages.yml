@@ -27,7 +27,7 @@ jobs:
       - uses: actions/configure-pages@v5
       - run: bash scripts/build-pages.sh
         env:
-          NEXT_PUBLIC_BASE_PATH: /datememagdalena
+          NEXT_PUBLIC_BASE_PATH: /dateme
           NEXT_PUBLIC_API_BASE: ${{ vars.API_BASE_URL }}
       - uses: actions/upload-pages-artifact@v3
         with:
